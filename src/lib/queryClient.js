@@ -1,5 +1,8 @@
 import { QueryClient } from "@tanstack/react-query";
 
+// ✅ Backend base URL (from Vercel env)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 // Safely parse any response body (JSON or plain text)
 async function parseBody(res) {
   const text = await res.text();
@@ -38,6 +41,7 @@ async function throwIfResNotOk(res) {
   throw new Error(`${res.status}: ${msg || res.statusText}`);
 }
 
+// ✅ Used by mutations (POST, DELETE, PATCH, etc.)
 export async function apiRequest(method, url, data) {
   const token = localStorage.getItem("accessToken");
   const headers = {};
@@ -45,27 +49,27 @@ export async function apiRequest(method, url, data) {
   if (data) headers["Content-Type"] = "application/json";
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(url, {
+  const res = await fetch(`${API_BASE_URL}${url}`, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
   });
 
   await throwIfResNotOk(res);
   return parseBody(res);
 }
 
-export const getQueryFn = ({ on401: unauthorizedBehavior }) =>
+// ✅ Used by React Query for GET requests
+export const getQueryFn =
+  ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const token = localStorage.getItem("accessToken");
     const headers = {};
 
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetch(queryKey.join("/"), {
+    const res = await fetch(`${API_BASE_URL}${queryKey.join("/")}`, {
       headers,
-      credentials: "include",
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
