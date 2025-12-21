@@ -20,6 +20,7 @@ export default function AuthPage({ onLogin }) {
     
     try {
       const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
+
       const payload = isLogin 
         ? { username: formData.username, password: formData.password }
         : formData;

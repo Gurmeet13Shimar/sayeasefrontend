@@ -21,7 +21,7 @@ export default function HomePage({ user, onLogout }) {
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
+    // localStorage.removeItem("user");
     onLogout();
   };
 
