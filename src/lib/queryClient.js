@@ -1,9 +1,9 @@
 import { QueryClient } from "@tanstack/react-query";
 
-// ✅ Backend base URL (from Vercel env)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
-// Safely parse any response body (JSON or plain text)
+/* ------------------ helpers ------------------ */
+
 async function parseBody(res) {
   const text = await res.text();
   if (!text) return null;
@@ -14,7 +14,6 @@ async function parseBody(res) {
   }
 }
 
-// Prevent crashes from circular JSON or very large errors
 function safeMessage(input) {
   try {
     if (typeof input === "string") return input;
@@ -41,7 +40,8 @@ async function throwIfResNotOk(res) {
   throw new Error(`${res.status}: ${msg || res.statusText}`);
 }
 
-// ✅ Used by mutations (POST, DELETE, PATCH, etc.)
+/* ------------------ MUTATIONS ------------------ */
+
 export async function apiRequest(method, url, data) {
   const token = localStorage.getItem("accessToken");
   const headers = {};
@@ -53,32 +53,38 @@ export async function apiRequest(method, url, data) {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
+    credentials: "include",
   });
 
   await throwIfResNotOk(res);
   return parseBody(res);
 }
 
-// ✅ Used by React Query for GET requests
+/* ------------------ QUERIES ------------------ */
+
 export const getQueryFn =
-  ({ on401: unauthorizedBehavior }) =>
+  ({ on401 }) =>
   async ({ queryKey }) => {
     const token = localStorage.getItem("accessToken");
     const headers = {};
-
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetch(`${API_BASE_URL}${queryKey.join("/")}`, {
+    const path = Array.isArray(queryKey) ? queryKey[0] : queryKey;
+
+    const res = await fetch(`${API_BASE_URL}${path}`, {
       headers,
+      credentials: "include",
     });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+    if (on401 === "returnNull" && res.status === 401) {
       return null;
     }
 
     await throwIfResNotOk(res);
     return parseBody(res);
   };
+
+/* ------------------ QUERY CLIENT ------------------ */
 
 export const queryClient = new QueryClient({
   defaultOptions: {

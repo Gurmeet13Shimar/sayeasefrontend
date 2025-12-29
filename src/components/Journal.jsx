@@ -23,10 +23,10 @@ export default function Journal({ user }) {
     mood: "neutral",
     activities: "",
   });
-
-  const { data: journals, isLoading } = useQuery({ 
-    queryKey: ["/api/journals"],
-  });
+const { data: journals = [], isLoading } = useQuery({
+  queryKey: ["/api/journals"],
+  queryFn: () => apiRequest("GET", "/api/journals"),
+});
 
   const createJournal = useMutation({
     mutationFn: (data) => apiRequest("POST", "/api/journals", data),
@@ -150,8 +150,8 @@ export default function Journal({ user }) {
             const mood = moodOptions.find(m => m.value === journal.mood);
             return (
               <Card
-                key={journal.id}
-                data-testid={`journal-card-${journal.id}`}
+                key={journal._id}
+                data-testid={`journal-card-${journal._id}`}
                 className="rounded-2xl shadow-md hover-elevate"
               >
                 <CardContent className="p-6">
